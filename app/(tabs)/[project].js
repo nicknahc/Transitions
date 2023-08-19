@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, ScrollView, StyleSheet, PanResponder, TouchableOpacity, Text } from 'react-native';
+import { View, ScrollView, StyleSheet, PanResponder, TouchableOpacity, Text, TextInput } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Stack, useNavigation, useRouter, useGlobalSearchParams, useLocalSearchParams } from "expo-router";
 import Icon from 'react-native-vector-icons/FontAwesome'; // Assuming you want to use FontAwesome icons
@@ -13,7 +13,8 @@ const Formations = () => {
   const [loading, setLoading] = useState(true);
   const [showToolbar, setShowToolbar] = useState(false);
   const [selectedDancerIndex, setSelectedDancerIndex] = useState(null);
-   
+  const [editedDancerName, setEditedDancerName] = useState('');
+
   const loadProjectsFromAsyncStorage = async () => {
     try {
       const storedProjects = await AsyncStorage.getItem('projects');
@@ -41,6 +42,7 @@ const Formations = () => {
 
   const addDancerToProject = (projectIndex) => {
     const newDancer = {
+      name: `Dancer ${projects[projectIndex].dancers.length + 1}`, // Assign a default name
       x: 100, // Initial x-coordinate
       y: 100, // Initial y-coordinate
     };
@@ -64,7 +66,9 @@ const Formations = () => {
     onPanResponderGrant: () => {
         setShowToolbar(true);
         setSelectedDancerIndex(dancerIndex);
+        setEditedDancerName(projects[projectIndex].dancers[dancerIndex].name);
       },
+      
     onPanResponderMove: (evt, gestureState) => {
       // Handle dancer movement here
       const updatedProjects = [...projects];
@@ -114,6 +118,33 @@ const Formations = () => {
           </React.Fragment>
           {showToolbar && selectedDancerIndex !== null && (
   <View style={styles.toolbar}>
+    <TextInput
+      style={styles.dancerNameInput}
+      value={editedDancerName}
+      onChangeText={setEditedDancerName}
+    />
+    <TouchableOpacity
+      onPress={() => {
+        // Update the dancer's name
+        const updatedProjects = [...projects];
+        updatedProjects[projectIndex].dancers[selectedDancerIndex].name = editedDancerName;
+        setProjects(updatedProjects);
+
+        // Close the toolbar
+        setShowToolbar(false);
+        setSelectedDancerIndex(null);
+      }}
+    >
+      <Icon name="check" size={20} color="green" />
+    </TouchableOpacity>
+    <TouchableOpacity
+      onPress={() => {
+        setShowToolbar(false);
+        setSelectedDancerIndex(null);
+      }}
+    >
+      <Icon name="times" size={20} color="red" />
+    </TouchableOpacity>
     <TouchableOpacity
       onPress={() => {
         removeDancer(selectedDancerIndex);
@@ -125,6 +156,8 @@ const Formations = () => {
     </TouchableOpacity>
   </View>
 )}
+
+
 
       </View>
       
@@ -175,9 +208,21 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     backgroundColor: 'white',
-    paddingVertical: 10,
+    paddingBottom: 40, // Adjust the height here
+    paddingTop: 15,
     borderTopWidth: 1,
     borderTopColor: 'gray',
+    alignItems: 'center', // Center the content vertically
+  },
+  dancerName: {
+    marginRight: 10,
+    fontSize: 16,
+    fontWeight: 'bold',
+  },  
+  dancerNameInput: {
+    flex: 1,
+    marginRight: 10,
+    fontSize: 16,
   },
   
 });
